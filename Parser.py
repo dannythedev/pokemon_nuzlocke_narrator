@@ -36,16 +36,6 @@ class Parser:
                 return elements
         return
 
-    def get_xpath_element_by_index(self, xpaths, index=0):
-        for xpath in xpaths:
-            try:
-                element = self.stringify(xpath, self.dom.xpath(xpath)[index])
-                if element:
-                    return element
-            except IndexError:
-                pass
-        return
-
     def find(self, string):
         return self.soup.find(string)
 

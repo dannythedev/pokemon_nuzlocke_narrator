@@ -2,14 +2,11 @@ from functools import partial
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton, QProgressDialog, QProgressBar, \
-    QSizePolicy
-
+from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
 
 from LoadingBar import DataRetrievalThread, MarqueeProgressBar
 from NuzlockeTracker import NuzlockeTracker
-from PokemonDB import get_data
 
 
 class GameSelectionWindow(QDialog):

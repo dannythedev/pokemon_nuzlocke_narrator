@@ -1,10 +1,8 @@
 import os
 import re
-
 import requests
 import base64
 from PyQt5.QtGui import QPixmap
-
 import json
 
 POKEMON_DIR = 'sav/pokemon.json'

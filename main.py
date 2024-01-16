@@ -1,10 +1,7 @@
 import sys
-
 from PyQt5.QtWidgets import QApplication
-
 from GameSelectionWindow import GameSelectionWindow
 from NuzlockeTracker import NuzlockeTracker
-from PokemonDB import get_data
 
 
 def main():
