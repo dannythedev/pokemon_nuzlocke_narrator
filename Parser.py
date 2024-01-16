@@ -1,32 +1,23 @@
-import re
-import bs4
-import requests
 from lxml import etree
-
+import requests
+from requests import Response
 from Functions import regexify
-
 
 class Parser:
     """Html class for response."""
 
     def __init__(self):
-        self.soup = None
         self.dom = None
-        self.response = None
 
-    def set(self, response):
+    def set(self, response: Response):
         if isinstance(response, requests.Response):
-            self.response = response
-            response = response.text
-        self.soup = bs4.BeautifulSoup(response, "html.parser")
-        self.dom = etree.HTML(str(self.soup))
+            self.dom = etree.HTML(response.content)
 
     def stringify(self, xpath, elements):
+        if elements is None:
+            return None
         if xpath.endswith('/text()') or regexify(r'(@\w+)$', xpath):
-            if isinstance(elements, list):
-                return [str(element).strip() for element in elements]
-            else:
-                return str(elements).strip()
+            return [str(element).strip() for element in elements]
         return elements
 
     def get_xpath_elements(self, xpaths):
@@ -34,10 +25,7 @@ class Parser:
             elements = self.stringify(xpath, self.dom.xpath(xpath))
             if elements:
                 return elements
-        return
+        return None
 
     def find(self, string):
-        return self.soup.find(string)
-
-
-
+        return self.dom.find(string)
