@@ -3,8 +3,8 @@ import json
 from base64 import b64decode
 from functools import partial
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, \
-    QScrollArea, QGraphicsView, QGraphicsPixmapItem, QGraphicsScene, QFrame
-from PyQt5.QtGui import QPixmap, QIcon, QStandardItemModel, QStandardItem
+    QScrollArea, QGraphicsView, QGraphicsPixmapItem, QGraphicsScene, QFileDialog, QSizePolicy, QSpacerItem
+from PyQt5.QtGui import QPixmap, QIcon, QStandardItemModel, QStandardItem, QFont, QPainter, QColor
 from PyQt5.QtCore import Qt, QSize
 from CustomComboBox import CustomComboBox
 from Functions import is_json_empty, POKEMON_DIR, ENCOUNTER_DIR, EXPORT_DIR
@@ -34,7 +34,7 @@ class NuzlockeTracker(QWidget):
         if os.path.exists(filename):
             with open(filename, 'r') as file:
                 data = json.load(file)
-            self.loadDataToGUI(data)
+            # self.loadDataToGUI(data)
         else:
             print("Exported data file not found.")
 
@@ -50,14 +50,6 @@ class NuzlockeTracker(QWidget):
                     if statusButton.toolTip() == route_data['status']:
                         self.changeButtonColor(statusButton)
 
-        for x in range(self.layout.count()):
-            try:
-                s = self.layout.itemAt(x).layout().itemAt(2).layout().itemAt(0).widget().currentText()
-                if s != '-':
-                    print(s)
-            except:
-                pass
-
     def calculateLayoutIndex(self, region_index, route_index):
         # Assuming each region contributes only one row
         return region_index * 2 + route_index
@@ -69,6 +61,12 @@ class NuzlockeTracker(QWidget):
     color: #D3D3D3; /* Light gray text */
     font-family: "Roboto", sans-serif; /* Modern font */
     font-size: 11pt;
+        }
+        QLabel#containerTitle {
+        font-size: 9pt; /* Adjust the font size */
+        font-style: italic;
+        color: #D3D3D3; /* Light gray text */
+        font-family: 'Palatino Linotype', monospace; /* Modern font */
         }
         QLabel#regionLabel {
             font-size: 9pt;
@@ -149,50 +147,66 @@ class NuzlockeTracker(QWidget):
         """)
 
     def exportData(self):
-        export_dict = dict()
+        from datetime import datetime
+        # Get the current date
+        current_date = datetime.now()
+        current_time = current_date.time()
+        # Format the time as mm_hh
+        # Format the date as dd-mm-yy
+        formatted_date = current_date.strftime("%d-%m-%y")
+        formatted_time = current_time.strftime("%M_%H")
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save Data File", f"gen{self.GENERATION}_{formatted_date}_{formatted_time}_sav", "JSON Files (*.json);;All Files (*)", options=options)
 
-        for i in range(self.layout.count()):
-            vBox = self.layout.itemAt(i).layout()
-            if vBox:
-                regionLabel = vBox.itemAt(1).widget()
-                region_name = regionLabel.text()
-                routeLabel = vBox.itemAt(0).widget()
-                route_name = routeLabel.text()
+        if file_name:
+            if not file_name.endswith('.json'):
+                file_name+='.json'
+            export_dict = dict()
 
-                # Add an empty dictionary for each route in the corresponding region
-                export_dict.setdefault(region_name, {})[route_name] = {}
+            for i in range(self.layout.count()):
+                vBox = self.layout.itemAt(i).layout()
+                if vBox:
+                    regionLabel = vBox.itemAt(1).widget()
+                    region_name = regionLabel.text()
+                    routeLabel = vBox.itemAt(0).widget()
+                    route_name = routeLabel.text()
 
-                for j in range(1, vBox.count()):
-                    hBox = vBox.itemAt(j).layout()
-                    if hBox:
-                        # Initialize status as None
-                        status = None
-                        comboBox = hBox.itemAt(0).widget()
-                        pokemon_name = comboBox.currentText()
+                    # Add an empty dictionary for each route in the corresponding region
+                    export_dict.setdefault(region_name, {})[route_name] = {}
 
-                        nicknameEdit = hBox.itemAt(1).widget()
-                        nickname = nicknameEdit.text()
-                        export_dict[region_name][route_name] = {
-                            'pokemon': pokemon_name,
-                            'nickname': nickname,
-                            'status': status
-                        }
+                    for j in range(1, vBox.count()):
+                        hBox = vBox.itemAt(j).layout()
+                        if hBox:
+                            # Initialize status as None
+                            status = None
+                            comboBox = hBox.itemAt(0).widget()
+                            pokemon_name = comboBox.currentText()
 
-        # Iterate through status buttons to find the selected one
-        for region_name in self.status_buttons_by_route:
-            for route_name in self.status_buttons_by_route[region_name]:
-                buttons = self.status_buttons_by_route[region_name][route_name]['Status']
-                for statusButton in buttons:
-                    if 'background-color: red;' in statusButton.styleSheet():
-                        status = statusButton.toolTip()
-                        # Add the data to the route data dictionary
-                        export_dict[region_name][route_name]['status'] = status
+                            nicknameEdit = hBox.itemAt(1).widget()
+                            nickname = nicknameEdit.text()
+                            export_dict[region_name][route_name] = {
+                                'pokemon': pokemon_name,
+                                'nickname': nickname,
+                                'status': status
+                            }
 
-        with open(EXPORT_DIR.format(self.GENERATION), 'w') as file:
-            if is_json_empty(EXPORT_DIR.format(self.GENERATION)):
-                json.dump(export_dict, file, indent=4)
+            # Iterate through status buttons to find the selected one
+            for region_name in self.status_buttons_by_route:
+                for route_name in self.status_buttons_by_route[region_name]:
+                    buttons = self.status_buttons_by_route[region_name][route_name]['Status']
+                    for statusButton in buttons:
+                        if 'background-color: red;' in statusButton.styleSheet():
+                            status = statusButton.toolTip()
+                            # Add the data to the route data dictionary
+                            export_dict[region_name][route_name]['status'] = status
 
-        print("Data exported successfully.")
+            with open(file_name, 'w') as file:
+                if is_json_empty(file_name):
+                    json.dump(export_dict, file, indent=4)
+
+            print(f"Data exported successfully to: {file_name}")
+
 
     def addPokemonImageContainer(self):
         # Add a new widget to hold the Pokémon images
@@ -211,6 +225,22 @@ class NuzlockeTracker(QWidget):
         self.encounteredPokemonImageContainerLayout.setContentsMargins(0, 0, 0, 0)  # Remove layout margins
 
 
+    def loadDataFromFileDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, _ = QFileDialog.getOpenFileName(self, "Load Data File", "", "JSON Files (*.json);;All Files (*)", options=options)
+
+        if file_name:
+            self.loadDataFromFile(file_name)
+
+    def loadDataFromFile(self, file_name):
+        if os.path.exists(file_name):
+            with open(file_name, 'r') as file:
+                data = json.load(file)
+            self.loadDataToGUI(data)
+            print(f"Data loaded successfully from: {file_name}")
+        else:
+            print(f"File not found: {file_name}")
     def initUI(self):
         self.setWindowTitle("Nuzlocke Narrator")
         # Create the main layout
@@ -238,23 +268,37 @@ class NuzlockeTracker(QWidget):
         # For QWidget, set the layout to contain the scroll area
         mainLayout = QVBoxLayout(self)  # The main layout for the window
         mainLayout.addWidget(scrollArea)
-
         # Add the export button at the bottom
-        exportButton = QPushButton("Export Data")
+        # Create a horizontal layout for the load and export buttons
+        buttonLayout = QHBoxLayout()
+
+        # Add the export button to the button layout
+        exportButton = QPushButton("Export State")
         exportButton.clicked.connect(self.exportData)
-        mainLayout.addWidget(exportButton)
+        buttonLayout.addWidget(exportButton)
+
+        # Add the load button to the button layout
+        loadButton = QPushButton("Load State")
+        loadButton.clicked.connect(self.loadDataFromFileDialog)
+        buttonLayout.addWidget(loadButton)
+
+        # Add the button layout to the main layout
+        mainLayout.addLayout(buttonLayout)
 
         # Add the generation icon in the top-right corner
         self.addGenerationIcon()
 
+        def set_title(text):
+            # Create a QLabel for the title
+            label = QLabel(text)
+            label.setObjectName("containerTitle")  # Set object name for styling
+            mainLayout.addWidget(label)
+
         # Create a widget to hold the layout for Pokémon images
         self.addPokemonImageContainer()
-        self.addEncounteredPokemonImageContainer()
         containerForImages = QWidget()
         containerForImages.setLayout(self.pokemonImageContainerLayout)
         mainLayout.addWidget(containerForImages)
-
-        # Create a new widget and layout for encountered Pokémon images
         self.addEncounteredPokemonImageContainer()
         encounteredContainerForImages = QWidget()
         encounteredContainerForImages.setLayout(self.encounteredPokemonImageContainerLayout)
@@ -263,9 +307,12 @@ class NuzlockeTracker(QWidget):
         self.windowIcon()
         self.loadData()
         # Adjust window size as needed
-        self.setGeometry(300, 300, 655, 850)
+        WIDTH, HEIGHT = 655, 855
+        self.setFixedHeight(HEIGHT)
+        self.setGeometry(300, 300, WIDTH, HEIGHT)
 
     def updatePokemonImageContainer(self, pokemon_names):
+        DIF = 60
         # Clear existing images in the container
         for i in reversed(range(self.pokemonImageContainerLayout.count())):
             item = self.pokemonImageContainerLayout.itemAt(i)
@@ -285,9 +332,17 @@ class NuzlockeTracker(QWidget):
                 # Create a QGraphicsPixmapItem for each Pokemon image
                 item = QGraphicsPixmapItem(pixmap)
                 item.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
-                item.setPos(i * 50, 0)
+                item.setPos(i * DIF, 0)
                 item.setToolTip(f'{pokemon_nickname}\nThe {pokemon_name}')
                 scene.addItem(item)
+
+                img_pokeball = 'sav/img/caught.png'
+                pixmap = QPixmap(img_pokeball)
+                item2 = QGraphicsPixmapItem(pixmap)
+                item2.setPixmap(pixmap.scaled(50, 50, Qt.KeepAspectRatio))
+                item2 = QGraphicsPixmapItem(pixmap)
+                item2.setPos(i * DIF + 60, 60)
+                scene.addItem(item2)
 
         # Create a QGraphicsView and set the scene
         view = QGraphicsView(self)
@@ -296,7 +351,27 @@ class NuzlockeTracker(QWidget):
         # Add the QGraphicsView to the layout
         self.pokemonImageContainerLayout.addWidget(view)
 
+    def text_to_pixmap(self, text, font_size=8, width=200, height=50):
+        pixmap = QPixmap(width, height)
+        pixmap.fill(Qt.transparent)  # Use transparent background
+
+        painter = QPainter(pixmap)
+
+        # Create a pixelated font
+        font = QFont("Courier New", font_size, QFont.Bold)
+        painter.setFont(font)
+
+        # Set font color to white
+        painter.setPen(QColor(Qt.white))
+
+        # Draw the text on the pixmap
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, text)
+        painter.end()
+
+        return pixmap
+
     def updateEncounteredPokemonImageContainer(self, encountered_pokemon):
+        DIF = 25
         # Clear existing images and labels in the container
         for i in reversed(range(self.encounteredPokemonImageContainerLayout.count())):
             item = self.encounteredPokemonImageContainerLayout.itemAt(i)
@@ -323,10 +398,18 @@ class NuzlockeTracker(QWidget):
 
                 # Create a QGraphicsPixmapItem for each Pokemon image
                 item = QGraphicsPixmapItem(pixmap)
-                item.setPixmap(pixmap.scaled(75, 75, Qt.KeepAspectRatio))
-                item.setPos(i * 30, 0)
-                item.setToolTip(f'x{str(count)}')
+                item.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+                item.setPos(i * DIF, 0)
+                item.setToolTip(f'{pokemon_name}:\nx{str(count)}')
                 scene.addItem(item)
+
+                img_pokeball = self.text_to_pixmap(f'x{str(count)}')
+                pixmap = QPixmap(img_pokeball)
+                item2 = QGraphicsPixmapItem(pixmap)
+                item2.setPixmap(pixmap.scaled(50, 50, Qt.KeepAspectRatio))
+                item2 = QGraphicsPixmapItem(pixmap)
+                item2.setPos(i * DIF - 40, 50)
+                scene.addItem(item2)
 
         # Create a QGraphicsView and set the scene
         view = QGraphicsView(self)

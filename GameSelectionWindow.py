@@ -38,6 +38,10 @@ class GameSelectionWindow(QDialog):
         layout.addWidget(self.retrieveButton)
         self.windowIcon()
         self.applyDarkTheme()
+        WIDTH, HEIGHT = 280, 540
+        self.setFixedHeight(HEIGHT)
+        self.setFixedWidth(WIDTH)
+        self.setGeometry(300, 300, WIDTH, HEIGHT)
 
     def windowIcon(self):
         NuzlockeTracker.windowIcon(self)
