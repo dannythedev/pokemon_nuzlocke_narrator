@@ -14,7 +14,7 @@ class DataRetrievalThread(QThread):
 
     def run(self):
         data = get_data(GENERATION=self.generation)
-        self.data_retrieved.emit(data)
+        # self.data_retrieved.emit(data)
 
 
 class MarqueeProgressBar(QProgressBar):

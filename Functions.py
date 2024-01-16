@@ -1,5 +1,7 @@
 import os
 import re
+from collections import OrderedDict
+
 import requests
 import base64
 from PyQt5.QtGui import QPixmap
@@ -8,6 +10,8 @@ import json
 POKEMON_DIR = 'sav/pokemon.json'
 ENCOUNTER_DIR = 'sav/gen/encounters{}.json'
 EXPORT_DIR = 'sav/gen/save{}.json'
+
+
 def is_json_empty(filename):
     if os.path.exists(filename):
         try:
@@ -53,9 +57,51 @@ def convert_image_url_to_base64(url):
         print(f"Error fetching image from URL: {e}")
         return None
 
+
 def regexify(regex, data):
     """Extracts regex string from data string."""
     try:
         return re.findall(regex, str(data))[0]
     except:
         return
+
+
+def calculate_level_averages(levels):
+    cell_averages = []
+
+    for level in levels:
+        if '-' in level:
+            start, end = map(int, level.split('-'))
+            average = (start + end) / 2
+        else:
+            average = level
+
+        if isinstance(average, (int, float)):
+            cell_averages.append(average)
+    if cell_averages:
+        overall_average = sum(cell_averages) / len(cell_averages)
+        return cell_averages, overall_average
+    return [100], 100
+
+
+def average_level(route_data):
+    total_levels = sum(route_data.values())
+    num_pokemon = len(route_data.values())
+    if num_pokemon == 0:
+        return 0
+    return total_levels / num_pokemon
+
+
+# Function to sort routes by average level
+def sort_routes_by_average(region_data):
+    sorted_routes = sorted(region_data.items(), key=lambda x: average_level(x[1]))
+    return OrderedDict(sorted_routes)
+
+# Function to sort routes for each region in the Pokemon dictionary
+def sort_routes_for_each_region(pokemon_dict):
+    sorted_pokemon_dict = OrderedDict()
+    for region, region_data in pokemon_dict.items():
+        sorted_routes = sort_routes_by_average(region_data)
+        sorted_pokemon_dict[region] = sorted_routes
+    return OrderedDict(sorted_pokemon_dict)
+

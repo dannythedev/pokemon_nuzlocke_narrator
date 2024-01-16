@@ -284,7 +284,7 @@ class NuzlockeTracker(QWidget):
                 icon_size = QSize(100, 100)
                 item = QStandardItem(QIcon(pixmap.scaled(icon_size, Qt.KeepAspectRatio)), name)
                 model.appendRow(item)
-
+        icon_size = QSize(100, 100)
         comboBox.setModel(model)
         comboBox.setIconSize(icon_size)
         comboBox.currentIndexChanged.connect(lambda: self.onPokemonSelected(comboBox))

@@ -3,7 +3,8 @@ from collections import OrderedDict
 
 import requests
 
-from Functions import convert_image_url_to_base64, is_json_empty, POKEMON_DIR, ENCOUNTER_DIR
+from Functions import convert_image_url_to_base64, is_json_empty, POKEMON_DIR, ENCOUNTER_DIR, calculate_level_averages, \
+    sort_routes_for_each_region, average_level
 from Parser import Parser
 from Request import Request
 
@@ -40,6 +41,7 @@ class PokemonDB(Request):
                                "generation_encounter": "//h2[contains(text(), 'Generation {gen_id}')]/following-sibling::div[1]/table",
                                "encounter_name": ".//a[@class='ent-name']/text()",
                                "encounter_rarity": ".//td[6]/img[@class='icon-loc'][@title]/@title",
+                               "encounter_levels":".//td[@class='cell-num']/text()",
                                "route_name": "//h1/text()"}
                        }
 
@@ -87,7 +89,7 @@ class PokemonDB(Request):
                     [self.xpaths["pokemon_locations_page"]["location_url"].format(region=region.lower())]))
                 if region not in location_encounters:
                     location_encounters[region] = dict()
-                    location_encounters[region]['Starters'] = starters[region]
+                    location_encounters[region]['Starters'] = {pokemon: 0 for pokemon in starters[region]}
             # Encounter
             for location in locations_list:
                 response = self.get(url=self.home_url + location)
@@ -95,10 +97,16 @@ class PokemonDB(Request):
                     [self.xpaths["pokemon_route_page"]["generation_encounter"].format(gen_id=self.GENERATION)])
                 if pokemon_encountered:
                     encounter_names = pokemon_encountered[0].xpath(self.xpaths["pokemon_route_page"]["encounter_name"])
-                    encounter_pair = {key: [] for key in encounter_names}
+                    encounter_levels = pokemon_encountered[0].xpath(self.xpaths["pokemon_route_page"]["encounter_levels"])
+                    route_average_level = calculate_level_averages(encounter_levels)[0]
+                    encounter_pair = dict(list(zip(encounter_names, route_average_level)))
                     route_name, region = self.html.get_xpath_elements([self.xpaths["pokemon_route_page"]["route_name"]])[0].split(', ')
                     location_encounters[region][route_name] = encounter_pair
             location_encounters = OrderedDict(reversed(location_encounters.items()))
+
+            # Sort routes for each region in the Pokemon dictionary
+            location_encounters = sort_routes_for_each_region(location_encounters)
+
             export_to_json(ENCOUNTER_DIR.format(self.GENERATION), location_encounters)
         else:
             print("Encounter.json is already here.")
