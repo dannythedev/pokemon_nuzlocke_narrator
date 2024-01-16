@@ -3,7 +3,7 @@
 ## Overview
 
 Nuzlocke Narrator is a Pokemon Nuzlocke Tracker designed to help you keep track of your Nuzlocke challenge progress. With this tool, you can select the generation of Pokemon games you wish to play, retrieve data about Pokemon and encounters from pokemondb.net, and track your encounters throughout the game.
-To start the program, execute the  ```main.py``` with Python.
+
 
 ## Features
 
@@ -17,8 +17,9 @@ To start the program, execute the  ```main.py``` with Python.
   - ![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/7d047cc0-7c79-483c-8911-458c1a68ce74)
 
 - **View Locations and Encounters:**
-  - After retrieving the data, all the locations and their encounters will be shown accordingly.
-  - ![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/e5799a32-d994-49a4-ab7b-2a25387fa47f)
+  - After retrieving the data, all the locations and their encounters will be shown accordingly. You can save and load your state.
+  - ![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/74848f6e-2587-47f4-841f-4d1c008216c9)
+
 
 - **Track Pokemon Encounters:**
   - Track the Pokemon you encounter during your Nuzlocke challenge.
@@ -56,3 +57,5 @@ To start the program, execute the  ```main.py``` with Python.
 
    ```bash
    git clone https://github.com/your-username/Nuzlocke-Narrator.git
+2. In a virtual environment, make sure to have all the libraries in the ```requirements.txt```.
+3. To start the program, execute the  ```main.py``` with Python.
