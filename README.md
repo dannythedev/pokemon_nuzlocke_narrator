@@ -8,15 +8,15 @@ Nuzlocke Narrator is a Pokemon Nuzlocke Tracker designed to help you keep track 
 
 - **Select Generation:**
   - Choose the generation of Pokemon games you want to play.
-![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/0c2f0d53-a94c-4d5b-99b1-be7ed25b8ccc)
+  - ![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/0c2f0d53-a94c-4d5b-99b1-be7ed25b8ccc)
 
 - **Retrieve Data:**
   - If the data regarding Pokemon and encounters isn't locally available on your PC, use the "Retrieve Data" button to fetch information from pokemondb.net (in compliance with their robots.txt).
-![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/58efb69f-bb61-44e7-a73e-2a2032c98824)
+  - ![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/7d047cc0-7c79-483c-8911-458c1a68ce74)
 
 - **View Locations and Encounters:**
   - After retrieving the data, all the locations and their encounters will be shown accordingly.
-![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/e5799a32-d994-49a4-ab7b-2a25387fa47f)
+  - ![image](https://github.com/dannythedev/pokemon_nuzlocke_narrator/assets/99733108/e5799a32-d994-49a4-ab7b-2a25387fa47f)
 
 - **Track Pokemon Encounters:**
   - Track the Pokemon you encounter during your Nuzlocke challenge.
