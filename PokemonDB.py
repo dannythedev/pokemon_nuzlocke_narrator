@@ -38,7 +38,7 @@ class PokemonDB(Request):
                             },
                        "pokemon_route_page":
                            {
-                               "generation_encounter": "//h2[contains(text(), 'Generation {gen_id}')]/following-sibling::div[1]/table",
+                               "generation_encounter": "//h2[contains(text(), 'Generation {gen_id}')]/following-sibling::div/table",
                                "encounter_name": ".//a[@class='ent-name']/text()",
                                "encounter_rarity": ".//td[6]/img[@class='icon-loc'][@title]/@title",
                                "encounter_levels":".//td[@class='cell-num']/text()",
@@ -77,7 +77,8 @@ class PokemonDB(Request):
             # Add more regions and starters as needed
         }
 
-
+        route_name = ''
+        region_name = ''
         # Locations
         location_encounters = dict()
         if is_json_empty(ENCOUNTER_DIR.format(self.GENERATION)):
@@ -95,12 +96,14 @@ class PokemonDB(Request):
                 response = self.get(url=self.home_url + location)
                 pokemon_encountered = self.html.get_xpath_elements(
                     [self.xpaths["pokemon_route_page"]["generation_encounter"].format(gen_id=self.GENERATION)])
+                encounter_pair = dict()
                 if pokemon_encountered:
-                    encounter_names = pokemon_encountered[0].xpath(self.xpaths["pokemon_route_page"]["encounter_name"])
-                    encounter_levels = pokemon_encountered[0].xpath(self.xpaths["pokemon_route_page"]["encounter_levels"])
-                    route_average_level = calculate_level_averages(encounter_levels)[0]
-                    encounter_pair = dict(list(zip(encounter_names, route_average_level)))
-                    route_name, region = self.html.get_xpath_elements([self.xpaths["pokemon_route_page"]["route_name"]])[0].split(', ')
+                    for pokemon_encounter_method in pokemon_encountered:
+                        encounter_names = pokemon_encounter_method.xpath(self.xpaths["pokemon_route_page"]["encounter_name"])
+                        encounter_levels = pokemon_encounter_method.xpath(self.xpaths["pokemon_route_page"]["encounter_levels"])
+                        route_average_level = calculate_level_averages(encounter_levels)
+                        encounter_pair.update({pokemon: route_average_level for pokemon in encounter_names})
+                        route_name, region = self.html.get_xpath_elements([self.xpaths["pokemon_route_page"]["route_name"]])[0].split(', ')
                     location_encounters[region][route_name] = encounter_pair
             location_encounters = OrderedDict(reversed(location_encounters.items()))
 

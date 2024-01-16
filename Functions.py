@@ -79,9 +79,9 @@ def calculate_level_averages(levels):
         if isinstance(average, (int, float)):
             cell_averages.append(average)
     if cell_averages:
-        overall_average = sum(cell_averages) / len(cell_averages)
-        return cell_averages, overall_average
-    return [100], 100
+        averages = sum(cell_averages)/len(cell_averages)
+        return averages
+    return 100
 
 
 def average_level(route_data):
