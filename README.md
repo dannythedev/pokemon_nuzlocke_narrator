@@ -3,6 +3,7 @@
 ## Overview
 
 Nuzlocke Narrator is a Pokemon Nuzlocke Tracker designed to help you keep track of your Nuzlocke challenge progress. With this tool, you can select the generation of Pokemon games you wish to play, retrieve data about Pokemon and encounters from pokemondb.net, and track your encounters throughout the game.
+To start the program, execute the  ```main.py``` with Python.
 
 ## Features
 
@@ -44,6 +45,9 @@ Nuzlocke Narrator is a Pokemon Nuzlocke Tracker designed to help you keep track 
 
 - Python 3.x
 - PyQt5
+- beautifulsoup4
+- lxml
+- requests
 
 ## How to Run
 
