@@ -3,7 +3,7 @@ import json
 from base64 import b64decode
 from functools import partial
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, \
-    QScrollArea
+    QScrollArea, QGraphicsView, QGraphicsPixmapItem, QGraphicsScene, QFrame
 from PyQt5.QtGui import QPixmap, QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtCore import Qt, QSize
 from CustomComboBox import CustomComboBox
@@ -60,7 +60,7 @@ class NuzlockeTracker(QWidget):
 
     def calculateLayoutIndex(self, region_index, route_index):
         # Assuming each region contributes only one row
-        return region_index*2 + route_index
+        return region_index * 2 + route_index
 
     def applyDarkTheme(self):
         self.setStyleSheet("""
@@ -178,7 +178,6 @@ class NuzlockeTracker(QWidget):
                             'status': status
                         }
 
-
         # Iterate through status buttons to find the selected one
         for region_name in self.status_buttons_by_route:
             for route_name in self.status_buttons_by_route[region_name]:
@@ -194,6 +193,23 @@ class NuzlockeTracker(QWidget):
                 json.dump(export_dict, file, indent=4)
 
         print("Data exported successfully.")
+
+    def addPokemonImageContainer(self):
+        # Add a new widget to hold the Pokémon images
+        self.pokemonImageContainer = QWidget()
+        self.pokemonImageContainer.setObjectName("pokemonImageContainer")
+        self.pokemonImageContainerLayout = QHBoxLayout(self.pokemonImageContainer)
+        self.pokemonImageContainerLayout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.pokemonImageContainerLayout.setContentsMargins(0, 0, 0, 0)  # Remove layout margins
+
+    def addEncounteredPokemonImageContainer(self):
+        # Add a new widget to hold the encountered Pokémon images
+        self.encounteredPokemonImageContainer = QWidget()
+        self.encounteredPokemonImageContainer.setObjectName("encounteredPokemonImageContainer")
+        self.encounteredPokemonImageContainerLayout = QHBoxLayout(self.encounteredPokemonImageContainer)
+        self.encounteredPokemonImageContainerLayout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.encounteredPokemonImageContainerLayout.setContentsMargins(0, 0, 0, 0)  # Remove layout margins
+
 
     def initUI(self):
         self.setWindowTitle("Nuzlocke Narrator")
@@ -230,11 +246,94 @@ class NuzlockeTracker(QWidget):
 
         # Add the generation icon in the top-right corner
         self.addGenerationIcon()
+
+        # Create a widget to hold the layout for Pokémon images
+        self.addPokemonImageContainer()
+        self.addEncounteredPokemonImageContainer()
+        containerForImages = QWidget()
+        containerForImages.setLayout(self.pokemonImageContainerLayout)
+        mainLayout.addWidget(containerForImages)
+
+        # Create a new widget and layout for encountered Pokémon images
+        self.addEncounteredPokemonImageContainer()
+        encounteredContainerForImages = QWidget()
+        encounteredContainerForImages.setLayout(self.encounteredPokemonImageContainerLayout)
+        mainLayout.addWidget(encounteredContainerForImages)
+
         self.windowIcon()
         self.loadData()
         # Adjust window size as needed
-        self.setGeometry(300, 300, 655, 700)
+        self.setGeometry(300, 300, 655, 850)
 
+    def updatePokemonImageContainer(self, pokemon_names):
+        # Clear existing images in the container
+        for i in reversed(range(self.pokemonImageContainerLayout.count())):
+            item = self.pokemonImageContainerLayout.itemAt(i)
+            item.widget().setParent(None)
+
+        # Create a scene for the Pokemon images
+        scene = QGraphicsScene(self)
+
+        # Add images for the new Pokémon names
+        for i, (pokemon_name, pokemon_nickname) in enumerate(pokemon_names):
+            pokemon = next((p for p in self.pokemon_data if p['name'] == pokemon_name), None)
+            if pokemon:
+                img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
+                pixmap = QPixmap()
+                pixmap.loadFromData(img_data)
+
+                # Create a QGraphicsPixmapItem for each Pokemon image
+                item = QGraphicsPixmapItem(pixmap)
+                item.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+                item.setPos(i * 50, 0)
+                item.setToolTip(f'{pokemon_nickname}\nThe {pokemon_name}')
+                scene.addItem(item)
+
+        # Create a QGraphicsView and set the scene
+        view = QGraphicsView(self)
+        view.setScene(scene)
+
+        # Add the QGraphicsView to the layout
+        self.pokemonImageContainerLayout.addWidget(view)
+
+    def updateEncounteredPokemonImageContainer(self, encountered_pokemon):
+        # Clear existing images and labels in the container
+        for i in reversed(range(self.encounteredPokemonImageContainerLayout.count())):
+            item = self.encounteredPokemonImageContainerLayout.itemAt(i)
+            item.widget().setParent(None)
+
+        # Create a scene for the encountered Pokemon images
+        scene = QGraphicsScene(self)
+
+        # Count the occurrences of each Pokémon in the encountered_pokemon list
+        encountered_pokemon_counts = {}
+        for pokemon_name in encountered_pokemon:
+            encountered_pokemon_counts[pokemon_name] = encountered_pokemon_counts.get(pokemon_name, 0) + 1
+
+        # Sort the encountered Pokémon counts by appearance (highest to lowest)
+        sorted_counts = sorted(encountered_pokemon_counts.items(), key=lambda x: x[1], reverse=True)
+
+        # Add images for the encountered Pokémon names with counts
+        for i, (pokemon_name, count) in enumerate(sorted_counts):
+            pokemon = next((p for p in self.pokemon_data if p['name'] == pokemon_name), None)
+            if pokemon:
+                img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
+                pixmap = QPixmap()
+                pixmap.loadFromData(img_data)
+
+                # Create a QGraphicsPixmapItem for each Pokemon image
+                item = QGraphicsPixmapItem(pixmap)
+                item.setPixmap(pixmap.scaled(75, 75, Qt.KeepAspectRatio))
+                item.setPos(i * 30, 0)
+                item.setToolTip(f'x{str(count)}')
+                scene.addItem(item)
+
+        # Create a QGraphicsView and set the scene
+        view = QGraphicsView(self)
+        view.setScene(scene)
+
+        # Add the QGraphicsView to the layout
+        self.encounteredPokemonImageContainerLayout.addWidget(view)
     def windowIcon(self):
         icon_path = f'sav/img/pokeball.png'  # Replace with the actual path to your icon file
         if os.path.exists(icon_path):
@@ -267,6 +366,7 @@ class NuzlockeTracker(QWidget):
             font.setItalic(True)
             region_widget.setFont(font)
             vBox.addWidget(region_widget)  # Add the label to the vertical layout
+
         add_region_label()
         hBox1 = QHBoxLayout()
         comboBox = CustomComboBox()  # Use the custom combo box
@@ -367,6 +467,7 @@ class NuzlockeTracker(QWidget):
             button.setStyleSheet("QPushButton { background-color: grey; }")
         else:
             button.setStyleSheet("QPushButton { background-color: red; }")
+        self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
 
     def updateStatus(self, comboBox, status, clickedButton):
         pokemon_name = comboBox.currentText()
@@ -386,16 +487,34 @@ class NuzlockeTracker(QWidget):
                                 statusLabel.setText(status)
                                 return  # Break out of both loops
 
+    def getAllCaughtPokemonNames(self):
+        # Get caught pokemon currently in team.
+        caught_pokemon_names = []
+        encountered_pokemon = []
+        for region_name in self.status_buttons_by_route:
+            for route_name in self.status_buttons_by_route[region_name]:
+                comboBox = self.status_buttons_by_route[region_name][route_name]['comboBox']
+                nickname = self.status_buttons_by_route[region_name][route_name]['Nickname']
+                encountered_pokemon.append(comboBox.currentText())
+                buttons = self.status_buttons_by_route[region_name][route_name]['Status']
+                for statusButton in buttons:
+                    if 'background-color: red;' in statusButton.styleSheet() and statusButton.toolTip() == 'Caught':
+                        caught_pokemon_names.append((comboBox.currentText(), nickname.text()))
+
+        return caught_pokemon_names[:6], encountered_pokemon
+
     def onPokemonSelected(self, comboBox):
-        pokemon_name = comboBox.currentText()
-        for pokemon in self.pokemon_data:
-            if pokemon['name'] == pokemon_name:
-                img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
-                pixmap = QPixmap()
-                pixmap.loadFromData(img_data)
-                for i in range(self.layout.count()):
-                    hbox = self.layout.itemAt(i).layout()
-                    if hbox:
-                        if hbox.itemAt(1).widget() == comboBox:
-                            hbox.itemAt(3).widget().setPixmap(pixmap.scaled(75, 75, Qt.KeepAspectRatio))
-                            break
+        selected_pokemon_names = [comboBox.itemText(i) for i in range(comboBox.count())]
+        for i in range(self.layout.count()):
+            hbox = self.layout.itemAt(i).layout()
+            if hbox and hbox.itemAt(1).widget() == comboBox:
+                for pokemon_name in selected_pokemon_names:
+                    pokemon = next((p for p in self.pokemon_data if p['name'] == pokemon_name), None)
+                    if pokemon:
+                        img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
+                        pixmap = QPixmap()
+                        pixmap.loadFromData(img_data)
+                        hbox.itemAt(3).widget().setPixmap(pixmap.scaled(75, 75, Qt.KeepAspectRatio))
+                        break
+        self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
+        self.updateEncounteredPokemonImageContainer(self.getAllCaughtPokemonNames()[1])
