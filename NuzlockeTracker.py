@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit
 from PyQt5.QtGui import QPixmap, QIcon, QStandardItemModel, QStandardItem, QFont, QPainter, QColor
 from PyQt5.QtCore import Qt, QSize
 from CustomComboBox import CustomComboBox
-from Functions import is_json_empty, POKEMON_DIR, ENCOUNTER_DIR, EXPORT_DIR
+from Functions import is_json_empty, POKEMON_DIR, ENCOUNTER_DIR
 
 
 class NuzlockeTracker(QWidget):
@@ -29,14 +29,6 @@ class NuzlockeTracker(QWidget):
         with open(filename, 'r') as file:
             return json.load(file)
 
-    def loadData(self):
-        filename = EXPORT_DIR.format(self.GENERATION)
-        if os.path.exists(filename):
-            with open(filename, 'r') as file:
-                data = json.load(file)
-            # self.loadDataToGUI(data)
-        else:
-            print("Exported data file not found.")
 
     def loadDataToGUI(self, data):
         for i, (region, region_data) in enumerate(data.items()):
@@ -305,7 +297,6 @@ class NuzlockeTracker(QWidget):
         mainLayout.addWidget(encounteredContainerForImages)
 
         self.windowIcon()
-        self.loadData()
         # Adjust window size as needed
         WIDTH, HEIGHT = 655, 855
         self.setFixedHeight(HEIGHT)

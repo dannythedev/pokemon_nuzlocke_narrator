@@ -9,8 +9,6 @@ import json
 
 POKEMON_DIR = 'sav/pokemon.json'
 ENCOUNTER_DIR = 'sav/gen/encounters{}.json'
-EXPORT_DIR = 'sav/gen/save{}.json'
-
 
 
 def is_json_empty(filename):
