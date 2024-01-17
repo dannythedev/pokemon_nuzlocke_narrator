@@ -461,7 +461,7 @@ class NuzlockeTracker(QWidget):
         icon_size = QSize(100, 100)
         comboBox.setModel(model)
         comboBox.setIconSize(icon_size)
-        comboBox.currentIndexChanged.connect(lambda: self.onPokemonSelected(comboBox))
+        comboBox.currentIndexChanged.connect(lambda: self.onPokemonSelected(comboBox, region, route))
 
         comboBox.setFixedSize(250, 200)
         hBox1.addWidget(comboBox)
@@ -533,15 +533,40 @@ class NuzlockeTracker(QWidget):
         vBox.addWidget(statusLabel)
 
         self.layout.addLayout(vBox)
+        # Disable status buttons initially
+        self.disableStatusButtons(region, route)
 
-    def changeButtonColor(self, button):
-        current_style = button.styleSheet()
-        # Check if the current color is red and toggle
-        if 'background-color: red;' in current_style:
-            button.setStyleSheet("QPushButton { background-color: grey; }")
-        else:
-            button.setStyleSheet("QPushButton { background-color: red; }")
-        self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
+
+    def disableStatusButtons(self, region, route):
+        if region in self.status_buttons_by_route and route in self.status_buttons_by_route[region]:
+            buttons = self.status_buttons_by_route[region][route].get('Status', [])
+            for button in buttons:
+                button.setEnabled(False)
+
+    def enableStatusButtons(self, region, route):
+        if region in self.status_buttons_by_route and route in self.status_buttons_by_route[region]:
+            buttons = self.status_buttons_by_route[region][route].get('Status', [])
+            for button in buttons:
+                button.setEnabled(True)
+
+    def changeButtonColor(self, clickedButton):
+        # Extract the region and route information from the clickedButton's parent widget
+        region, route = None, None
+        for r, routes in self.status_buttons_by_route.items():
+            for rt, buttons_info in routes.items():
+                if clickedButton in buttons_info.get('Status', []):
+                    region, route = r, rt
+                    break
+
+        if region is not None and route is not None:
+            buttons = self.status_buttons_by_route[region][route].get('Status', [])
+            for button in buttons:
+                # Reset the color of all buttons in the specific row to grey
+                button.setStyleSheet("QPushButton { background-color: grey; }")
+            # Set the color of the clicked button to red
+            clickedButton.setStyleSheet("QPushButton { background-color: red; }")
+            # Update the Pokemon image container with the caught Pokemon names
+            self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
 
     def updateStatus(self, comboBox, status, clickedButton):
         pokemon_name = comboBox.currentText()
@@ -577,18 +602,13 @@ class NuzlockeTracker(QWidget):
 
         return caught_pokemon_names[:6], encountered_pokemon
 
-    def onPokemonSelected(self, comboBox):
+    def onPokemonSelected(self, comboBox, region, route):
         selected_pokemon_names = [comboBox.itemText(i) for i in range(comboBox.count())]
-        for i in range(self.layout.count()):
-            hbox = self.layout.itemAt(i).layout()
-            if hbox and hbox.itemAt(1).widget() == comboBox:
-                for pokemon_name in selected_pokemon_names:
-                    pokemon = next((p for p in self.pokemon_data if p['name'] == pokemon_name), None)
-                    if pokemon:
-                        img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
-                        pixmap = QPixmap()
-                        pixmap.loadFromData(img_data)
-                        hbox.itemAt(3).widget().setPixmap(pixmap.scaled(75, 75, Qt.KeepAspectRatio))
-                        break
+        selected_pokemon = comboBox.currentText()  # Get the currently selected Pokémon
+        if selected_pokemon != '-':
+            self.enableStatusButtons(region, route)
+        else:
+            self.disableStatusButtons(region, route)
         self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
         self.updateEncounteredPokemonImageContainer(self.getAllCaughtPokemonNames()[1])
+
