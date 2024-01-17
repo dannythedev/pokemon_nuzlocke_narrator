@@ -77,7 +77,7 @@ class NuzlockeTracker(QWidget):
         }
 
         QPushButton:hover {
-            background-color: #388E3C; /* Darker shade on hover */
+            background-color: #FFA4A4; /* Darker shade on hover */
         }
 
         QPushButton:pressed {
@@ -562,9 +562,13 @@ class NuzlockeTracker(QWidget):
             buttons = self.status_buttons_by_route[region][route].get('Status', [])
             for button in buttons:
                 # Reset the color of all buttons in the specific row to grey
-                button.setStyleSheet("QPushButton { background-color: grey; }")
+                button.setStyleSheet("QPushButton { background-color: grey; }"
+                                     "QPushButton:hover { background-color: #FFCDD2; }")  # Light-red on hover
+
             # Set the color of the clicked button to red
-            clickedButton.setStyleSheet("QPushButton { background-color: red; }")
+            clickedButton.setStyleSheet("QPushButton { background-color: red; }"
+                                        "QPushButton:hover { background-color: #FFA4A4; }")  # Light-red on hover
+
             # Update the Pokemon image container with the caught Pokemon names
             self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
 
