@@ -8,6 +8,8 @@ from Functions import convert_image_url_to_base64, is_json_empty, POKEMON_DIR, E
 from Parser import Parser
 from Request import Request
 
+
+
 class PokemonDB(Request):
     def __init__(self, GENERATION):
         self.GENERATION = GENERATION
@@ -39,6 +41,7 @@ class PokemonDB(Request):
                        "pokemon_route_page":
                            {
                                "generation_encounter": "//h2[contains(text(), 'Generation {gen_id}')]/following-sibling::div/table",
+                               "encounter_method": ".//h2[contains(text(), 'Generation {gen_id}')]/following-sibling::h3/text()",
                                "encounter_name": ".//a[@class='ent-name']/text()",
                                "encounter_rarity": ".//td[6]/img[@class='icon-loc'][@title]/@title",
                                "encounter_levels":".//td[@class='cell-num']/text()",
@@ -83,26 +86,38 @@ class PokemonDB(Request):
         location_encounters = dict()
         if is_json_empty(ENCOUNTER_DIR.format(self.GENERATION)):
             response = self.get(url=self.region_url.format(home_url=self.home_url))
-            regions_list = self.html.get_xpath_elements([self.xpaths["pokemon_locations_page"]["regions"]])
+            regions_list = {'1': ['Kanto'],
+                            '2': ['Johto'],
+                            '3': ['Hoenn'],
+                            '4': ['Sinnoh'],
+                            '5': ['Unova'],
+                            '6': ['Kalos'],
+                            '7': ['Alola'],
+                            '8': ['Galar', 'Hisui'],
+                            '9': ['Paldea']}
             locations_list = []
-            for region in regions_list[:self.GENERATION]:
+            regions_list = [value for sublist in list(regions_list.values())[:self.GENERATION] for value in sublist]
+            for region in regions_list:
                 locations_list.extend(self.html.get_xpath_elements(
                     [self.xpaths["pokemon_locations_page"]["location_url"].format(region=region.lower())]))
                 if region not in location_encounters:
                     location_encounters[region] = dict()
-                    location_encounters[region]['Starters'] = {pokemon: 0 for pokemon in starters[region]}
+                    location_encounters[region]['Starters'] = {pokemon: {'Level':0, 'Time':'', 'Method':'Gift'} for pokemon in starters[region]}
             # Encounter
             for location in locations_list:
                 response = self.get(url=self.home_url + location)
+                encounter_method = self.html.get_xpath_elements(
+                    [self.xpaths["pokemon_route_page"]["encounter_method"].format(gen_id=self.GENERATION)])
                 pokemon_encountered = self.html.get_xpath_elements(
                     [self.xpaths["pokemon_route_page"]["generation_encounter"].format(gen_id=self.GENERATION)])
                 encounter_pair = dict()
                 if pokemon_encountered:
-                    for pokemon_encounter_method in pokemon_encountered:
+                    method_pair = list(zip(pokemon_encountered, encounter_method))
+                    for pokemon_encounter_method, pokemon_method in method_pair:
                         encounter_names = pokemon_encounter_method.xpath(self.xpaths["pokemon_route_page"]["encounter_name"])
                         encounter_levels = pokemon_encounter_method.xpath(self.xpaths["pokemon_route_page"]["encounter_levels"])
                         route_average_level = calculate_level_averages(encounter_levels)
-                        encounter_pair.update({pokemon: route_average_level for pokemon in encounter_names})
+                        encounter_pair.update({pokemon: {'Level':route_average_level, 'Time':'', 'Method':pokemon_method} for pokemon in encounter_names})
                         route_name, region = self.html.get_xpath_elements([self.xpaths["pokemon_route_page"]["route_name"]])[0].split(', ')
                     location_encounters[region][route_name] = encounter_pair
             location_encounters = OrderedDict(reversed(location_encounters.items()))

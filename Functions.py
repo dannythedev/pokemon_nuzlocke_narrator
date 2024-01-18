@@ -9,8 +9,23 @@ import json
 
 POKEMON_DIR = 'sav/pokemon.json'
 ENCOUNTER_DIR = 'sav/gen/encounters{}.json'
+ENCOUNTER_METHOD_DICT = {'Gift': '/sav/img/gift.png',
+                         'Super Rod': '/sav/img/superrod.png',
+                         'Good Rod': '/sav/img/goodrod.png',
+                         'Old Rod': '/sav/img/oldrod.png',
+                         'Surfing': '/sav/img/surf.png',
+                         'Headbutt (Special)': '/sav/img/honeytree.png',
+                         'Headbutt': '/sav/img/headbutt.png',
+                         'Walking': '/sav/img/walking.png',
+                         'Rock Smash': '/sav/img/pokeball.png',
+                         'Interact': '/sav/img/pokeball.png',
+                         'Trade': '/sav/img/pokeball.png'}
 
-
+def get_values_up_to_index_with_suffix(dictionary, index):
+    suffixes = {1: 'st', 2: 'nd', 3: 'rd'}
+    values = [value for sublist in list(dictionary.values())[:index] for value in sublist]
+    ordinal_index = str(index) + ('th' if 10 <= index % 100 <= 20 else suffixes.get(index % 10, 'th'))
+    return values, ordinal_index
 def is_json_empty(filename):
     if os.path.exists(filename):
         try:
@@ -83,18 +98,21 @@ def calculate_level_averages(levels):
     return 100
 
 
+# Function to sort routes by average level
+from collections import OrderedDict
+
 def average_level(route_data):
-    total_levels = sum(route_data.values())
-    num_pokemon = len(route_data.values())
+    levels = [pokemon_data['Level'] for pokemon_data in route_data.values()]
+    total_levels = sum(levels)
+    num_pokemon = len(levels)
     if num_pokemon == 0:
         return 0
     return total_levels / num_pokemon
 
-
-# Function to sort routes by average level
 def sort_routes_by_average(region_data):
     sorted_routes = sorted(region_data.items(), key=lambda x: average_level(x[1]))
     return OrderedDict(sorted_routes)
+
 
 # Function to sort routes for each region in the Pokemon dictionary
 def sort_routes_for_each_region(pokemon_dict):
