@@ -2,12 +2,38 @@ import os
 import json
 from base64 import b64decode
 from functools import partial
+
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, \
-    QScrollArea, QGraphicsView, QGraphicsPixmapItem, QGraphicsScene, QFileDialog, QSizePolicy, QSpacerItem
+    QScrollArea, QGraphicsView, QGraphicsPixmapItem, QGraphicsScene, QFileDialog, QSizePolicy, QSpacerItem, QComboBox
 from PyQt5.QtGui import QPixmap, QIcon, QStandardItemModel, QStandardItem, QFont, QPainter, QColor
 from PyQt5.QtCore import Qt, QSize
 from CustomComboBox import CustomComboBox
-from Functions import is_json_empty, POKEMON_DIR, ENCOUNTER_DIR
+from Functions import is_json_empty, POKEMON_DIR, ENCOUNTER_DIR, ENCOUNTER_METHOD_DICT
+
+
+class GraphicsSceneWidget(QWidget):
+    def __init__(self, pixmap):
+        super(GraphicsSceneWidget, self).__init__()
+
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        self.view.setRenderHint(QPainter.Antialiasing, True)
+
+        self.scene.addPixmap(pixmap)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.view)
+        self.setLayout(layout)
+
+
+class CustomComboBox(QComboBox):
+    def addItemWithGraphicsScene(self, name, pixmap_data):
+        pixmap = QPixmap()
+        pixmap.loadFromData(b64decode(pixmap_data))
+
+        graphics_scene_widget = GraphicsSceneWidget(pixmap)
+        self.addItem(name, graphics_scene_widget)
 
 
 class NuzlockeTracker(QWidget):
@@ -23,7 +49,9 @@ class NuzlockeTracker(QWidget):
         else:
             self.encounter_data = {}
         self.status_buttons_by_route = dict()
+        self.current_clicked_name = ''
         self.initUI()
+
 
     def load_json(self, filename):
         with open(filename, 'r') as file:
@@ -36,7 +64,7 @@ class NuzlockeTracker(QWidget):
                 comboBox = self.status_buttons_by_route[region][route]['comboBox']
                 nicknameEdit = self.status_buttons_by_route[region][route]['Nickname']
                 nicknameEdit.setText(route_data['nickname'])
-                comboBox.setCurrentText(route_data['pokemon'])
+                comboBox.setCurrentText(self.current_clicked_name)
                 buttons = self.status_buttons_by_route[region][route]['Status']
                 for statusButton in buttons:
                     if statusButton.toolTip() == route_data['status']:
@@ -448,20 +476,63 @@ class NuzlockeTracker(QWidget):
         # Create an empty item as the first item
         empty_item = QStandardItem('-')
         model.appendRow(empty_item)
-
-        for name in pokemon_names:
-            pokemon = next((p for p in self.pokemon_data if p['name'] == name), None)
-            if pokemon:
-                img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
-                pixmap = QPixmap()
-                pixmap.loadFromData(img_data)
-                icon_size = QSize(100, 100)
-                item = QStandardItem(QIcon(pixmap.scaled(icon_size, Qt.KeepAspectRatio)), name)
-                model.appendRow(item)
         icon_size = QSize(100, 100)
         comboBox.setModel(model)
         comboBox.setIconSize(icon_size)
         comboBox.currentIndexChanged.connect(lambda: self.onPokemonSelected(comboBox, region, route))
+
+        # Add this to your class initialization or wherever appropriate
+        self.graphics_scene = QGraphicsScene()
+        self.graphics_view = QGraphicsView(self.graphics_scene)
+        self.graphics_view.setFrameStyle(QGraphicsView.NoFrame)
+        self.graphics_view.setFixedSize(600,125)
+
+        def add_image(pixmap, scale=100, pos=(0,0)):
+            # Scale the pixmap while maintaining aspect ratio to fit in a 100x100 rectangle
+            scaled_pixmap = pixmap.scaled(scale, scale, Qt.KeepAspectRatio, Qt.FastTransformation)
+
+            # Create a QGraphicsPixmapItem and add it to the scene
+            pixmap_item = QGraphicsPixmapItem(scaled_pixmap)
+            pixmap_item.setFlag(QGraphicsPixmapItem.ItemIsSelectable)  # Enable the selectable flag
+            pixmap_item.setAcceptHoverEvents(True)  # Enable hover events
+            pixmap_item.setData(0, name)  # Store the Pokémon name as item data
+
+            # Connect the custom function to the mousePressEvent signal
+            pixmap_item.mousePressEvent = lambda event, name=name: self.set_combobox(name, comboBox)
+            self.graphics_scene.addItem(pixmap_item)
+            pixmap_item.setFlag(pixmap_item.ItemIsSelectable, False)
+            # You can set positions for items based on your layout logic
+            # For example, setting x and y positions based on some calculations
+            pixmap_item.setPos(pos[0], pos[1])
+            return pixmap_item
+
+        c=0
+        y=0
+        # Inside your loop where you create QStandardItemModel
+        for name in pokemon_names:
+            pokemon = next((p for p in self.pokemon_data if p['name'] == name), None)
+            icon_size = QSize(100, 100)
+
+            if pokemon:
+                img_data = b64decode(pokemon['chibi_image'].split(",")[-1])
+                pixmap = QPixmap()
+                pixmap.loadFromData(img_data)
+
+                method = ENCOUNTER_METHOD_DICT[pokemon_names[name]['Method']]
+                pixmap2 = QPixmap(method)
+                if c%10==0:
+                    y+=1
+                    c=0
+                item = add_image(pixmap, 100, (0 + 50 * c, -50+ 100*y))
+                item2 =add_image(pixmap2, 25, (40 + 50 * c, 25+ 100*y))
+                item = QStandardItem(QIcon(pixmap.scaled(icon_size, Qt.KeepAspectRatio)), name)
+                model.appendRow(item)
+                c+=1
+
+
+        # Add the QGraphicsView to your layout
+        vBox.addWidget(self.graphics_view)
+
 
         comboBox.setFixedSize(250, 200)
         hBox1.addWidget(comboBox)
@@ -529,7 +600,7 @@ class NuzlockeTracker(QWidget):
         vBox.addLayout(hBox1)
 
         # Status display label
-        statusLabel = QLabel('-')
+        statusLabel = QLabel('')
         vBox.addWidget(statusLabel)
 
         self.layout.addLayout(vBox)
@@ -573,7 +644,6 @@ class NuzlockeTracker(QWidget):
             self.updatePokemonImageContainer(self.getAllCaughtPokemonNames()[0])
 
     def updateStatus(self, comboBox, status, clickedButton):
-        pokemon_name = comboBox.currentText()
         for i in range(self.layout.count()):
             # Get the vertical layout that might contain the horizontal layouts
             vBox = self.layout.itemAt(i).layout()
@@ -606,6 +676,14 @@ class NuzlockeTracker(QWidget):
 
         return caught_pokemon_names[:6], encountered_pokemon
 
+
+    def set_combobox(self, specific_name, comboBox):
+        # Find the index of the item with the specific name in the combo box
+        index = comboBox.findText(specific_name)
+
+        # Set the current item to the one with the specific name
+        if index != -1:
+            comboBox.setCurrentIndex(index)
     def onPokemonSelected(self, comboBox, region, route):
         selected_pokemon_names = [comboBox.itemText(i) for i in range(comboBox.count())]
         selected_pokemon = comboBox.currentText()  # Get the currently selected Pokémon

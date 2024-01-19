@@ -9,17 +9,17 @@ import json
 
 POKEMON_DIR = 'sav/pokemon.json'
 ENCOUNTER_DIR = 'sav/gen/encounters{}.json'
-ENCOUNTER_METHOD_DICT = {'Gift': '/sav/img/gift.png',
-                         'Super Rod': '/sav/img/superrod.png',
-                         'Good Rod': '/sav/img/goodrod.png',
-                         'Old Rod': '/sav/img/oldrod.png',
-                         'Surfing': '/sav/img/surf.png',
-                         'Headbutt (Special)': '/sav/img/honeytree.png',
-                         'Headbutt': '/sav/img/headbutt.png',
-                         'Walking': '/sav/img/walking.png',
-                         'Rock Smash': '/sav/img/pokeball.png',
-                         'Interact': '/sav/img/pokeball.png',
-                         'Trade': '/sav/img/pokeball.png'}
+ENCOUNTER_METHOD_DICT = {'Gift': 'sav/img/gift.png',
+                         'Super Rod': 'sav/img/superrod.png',
+                         'Good Rod': 'sav/img/goodrod.png',
+                         'Old Rod': 'sav/img/oldrod.png',
+                         'Surfing': 'sav/img/surf.png',
+                         'Headbutt (Special)': 'sav/img/honeytree.png',
+                         'Headbutt': 'sav/img/headbutt.png',
+                         'Walking': 'sav/img/walking.png',
+                         'Rock Smash': 'sav/img/pokeball.png',
+                         'Interact': 'sav/img/pokeball.png',
+                         'Trade': 'sav/img/pokeball.png'}
 
 def get_values_up_to_index_with_suffix(dictionary, index):
     suffixes = {1: 'st', 2: 'nd', 3: 'rd'}
